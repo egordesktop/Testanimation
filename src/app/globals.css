@@ -19,8 +19,119 @@
   }
 }
 
+/* Убираем стандартные отступы и настраиваем полную высоту и ширину */
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  min-height: 100vh;
+  min-width: 100vw;
+  width: 100%;
+}
+
+/* Обеспечиваем, что контент поверх анимации читаем и занимает всю ширину */
+.content-overlay {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+/* Скрываем водяной знак unicorn.studio */
+[data-us-watermark],
+a[href*="unicorn.studio"],
+a[href*="Unicorn Studio"],
+[class*="watermark"],
+[class*="Watermark"],
+[id*="watermark"],
+[id*="Watermark"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Дополнительные правила для скрытия водяного знака */
+div[style*="unicorn.studio"],
+div[style*="Unicorn Studio"],
+div[class*="unicorn"],
+div[class*="Unicorn"],
+div[id*="unicorn"],
+div[id*="Unicorn"],
+span[class*="unicorn"],
+span[class*="Unicorn"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Скрываем элементы по тексту - используем JavaScript для этого */
+
+/* Обеспечиваем полноэкранное отображение */
+#__next {
+  width: 100%;
+  min-width: 100vw;
+  height: 100%;
+  min-height: 100vh;
+}
+
+/* Убираем ограничения по ширине для основного контейнера */
+main {
+  width: 100%;
+  min-width: 100vw;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Дополнительные правила для скрытия водяного знака */
+iframe[src*="unicorn.studio"],
+iframe[src*="Unicorn Studio"],
+embed[src*="unicorn.studio"],
+embed[src*="Unicorn Studio"],
+object[data*="unicorn.studio"],
+object[data*="Unicorn Studio"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Скрываем элементы с определенными классами */
+.unicorn-watermark,
+.unicornWatermark,
+.unicorn_watermark,
+.watermark-unicorn,
+.watermarkUnicorn {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Скрываем элементы по атрибутам data */
+[data-unicorn],
+[data-watermark],
+[data-us],
+[data-unicorn-studio] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
