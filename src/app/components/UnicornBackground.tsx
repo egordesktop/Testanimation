@@ -27,6 +27,56 @@ export default function UnicornBackground({
     // ДОБАВЛЯЕМ МОБИЛЬНУЮ ОПТИМИЗАЦИЮ
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
+    // Функция принудительной очистки памяти
+    const forceGarbageCollection = () => {
+      try {
+        // 1. Принудительный вызов garbage collector (работает только в Chrome DevTools)
+        if ((window as any).gc) {
+          (window as any).gc();
+        }
+        
+        // 2. Создаем и удаляем большой массив для принудительной очистки
+        const forceCleanup = () => {
+          let temp: any = new Array(1000000).fill(0);
+          temp = null;
+        };
+        forceCleanup();
+        
+        // 3. Очищаем все возможные кэши браузера
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => {
+              if (name.includes('unicorn') || name.includes('webgl')) {
+                caches.delete(name);
+              }
+            });
+          });
+        }
+        
+        // 4. Очищаем Canvas контексты (если доступны)
+        const canvases = document.querySelectorAll('canvas');
+        canvases.forEach(canvas => {
+          const gl = canvas.getContext('webgl') || canvas.getContext('webgl2');
+          if (gl) {
+            // Очищаем WebGL буферы
+            const ext = gl.getExtension('WEBGL_lose_context');
+            if (ext) {
+              ext.loseContext();
+              // Восстанавливаем контекст через небольшую задержку
+              setTimeout(() => {
+                ext.restoreContext();
+              }, 100);
+            }
+          }
+        });
+        
+        console.log('🧹 Принудительная очистка памяти выполнена');
+        
+      } catch (error) {
+        console.warn('Ошибка при очистке памяти:', error);
+      }
+    };
+
     // Функция удаления водяного знака
     const removeWatermark = () => {
       // Добавляем CSS для скрытия водяного знака
@@ -135,28 +185,61 @@ export default function UnicornBackground({
 
           // МОБИЛЬНАЯ ОПТИМИЗАЦИЯ - добавляем после инициализации
           if (isMobile) {
-            // Автоматическая пауза через 25 секунд на мобильных
-            setTimeout(() => {
-              if (window.UnicornStudio && window.UnicornStudio.pause) {
-                window.UnicornStudio.pause();
-                console.log('UnicornStudio: автоматическая пауза на мобильном устройстве');
-              }
-            }, 25000);
             
-            // Пауза при сворачивании страницы
+            // ПРИНУДИТЕЛЬНАЯ ОЧИСТКА ПАМЯТИ каждые 15 секунд
+            const memoryCleanupInterval = setInterval(() => {
+              forceGarbageCollection();
+            }, 15000);
+
+            // Мониторинг использования памяти (если доступно)
+            let memoryMonitorInterval: NodeJS.Timeout | null = null;
+            
+            if ('memory' in performance) {
+              const monitorMemory = () => {
+                const memInfo = (performance as any).memory;
+                const usedMB = Math.round(memInfo.usedJSHeapSize / 1048576);
+                const totalMB = Math.round(memInfo.totalJSHeapSize / 1048576);
+                
+                console.log(`📊 Память: ${usedMB}MB / ${totalMB}MB`);
+                
+                // Если использование памяти превышает 150MB - принудительная очистка
+                if (usedMB > 150) {
+                  console.warn('⚠️ Высокое использование памяти, запуск очистки...');
+                  forceGarbageCollection();
+                }
+                
+                // Резервная пауза при критическом использовании памяти (250MB+)
+                if (usedMB > 250) {
+                  console.error('🚨 КРИТИЧЕСКОЕ использование памяти! Принудительная пауза...');
+                  if (window.UnicornStudio && window.UnicornStudio.pause) {
+                    window.UnicornStudio.pause();
+                  }
+                }
+              };
+              
+              // Проверяем память каждые 10 секунд
+              memoryMonitorInterval = setInterval(monitorMemory, 10000);
+            }
+            
+            // Дополнительная очистка при изменении видимости страницы
             document.addEventListener('visibilitychange', () => {
               if (document.hidden && window.UnicornStudio && window.UnicornStudio.pause) {
                 window.UnicornStudio.pause();
+                // Очистка при сворачивании
+                setTimeout(forceGarbageCollection, 500);
               } else if (!document.hidden && window.UnicornStudio && window.UnicornStudio.play) {
                 window.UnicornStudio.play();
+                // Очистка при возврате
+                setTimeout(forceGarbageCollection, 1000);
               }
             });
 
-            // Пауза при потере фокуса окна
+            // Очистка при потере фокуса окна
             window.addEventListener('blur', () => {
               if (window.UnicornStudio && window.UnicornStudio.pause) {
                 window.UnicornStudio.pause();
               }
+              setTimeout(forceGarbageCollection, 500);
             });
 
             // Возобновление при получении фокуса
@@ -164,7 +247,14 @@ export default function UnicornBackground({
               if (window.UnicornStudio && window.UnicornStudio.play) {
                 window.UnicornStudio.play();
               }
+              setTimeout(forceGarbageCollection, 1000);
             });
+
+            // Сохраняем интервалы для очистки при размонтировании
+            (window as any).unicornCleanupIntervals = {
+              memoryCleanup: memoryCleanupInterval,
+              memoryMonitor: memoryMonitorInterval
+            };
           }
         }
         
@@ -230,6 +320,14 @@ export default function UnicornBackground({
     return () => {
       clearInterval(watermarkInterval)
       observer.disconnect()
+      
+      // Очищаем интервалы очистки памяти при размонтировании компонента
+      if ((window as any).unicornCleanupIntervals) {
+        const intervals = (window as any).unicornCleanupIntervals;
+        if (intervals.memoryCleanup) clearInterval(intervals.memoryCleanup);
+        if (intervals.memoryMonitor) clearInterval(intervals.memoryMonitor);
+        delete (window as any).unicornCleanupIntervals;
+      }
     }
     
   }, [projectId])
