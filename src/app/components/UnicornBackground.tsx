@@ -24,6 +24,9 @@ export default function UnicornBackground({
       return
     }
 
+    // ДОБАВЛЯЕМ МОБИЛЬНУЮ ОПТИМИЗАЦИЮ
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
     // Функция удаления водяного знака
     const removeWatermark = () => {
       // Добавляем CSS для скрытия водяного знака
@@ -129,6 +132,40 @@ export default function UnicornBackground({
         if (window.UnicornStudio && !window.UnicornStudio.isInitialized) {
           window.UnicornStudio.init()
           window.UnicornStudio.isInitialized = true
+
+          // МОБИЛЬНАЯ ОПТИМИЗАЦИЯ - добавляем после инициализации
+          if (isMobile) {
+            // Автоматическая пауза через 25 секунд на мобильных
+            setTimeout(() => {
+              if (window.UnicornStudio && window.UnicornStudio.pause) {
+                window.UnicornStudio.pause();
+                console.log('UnicornStudio: автоматическая пауза на мобильном устройстве');
+              }
+            }, 25000);
+            
+            // Пауза при сворачивании страницы
+            document.addEventListener('visibilitychange', () => {
+              if (document.hidden && window.UnicornStudio && window.UnicornStudio.pause) {
+                window.UnicornStudio.pause();
+              } else if (!document.hidden && window.UnicornStudio && window.UnicornStudio.play) {
+                window.UnicornStudio.play();
+              }
+            });
+
+            // Пауза при потере фокуса окна
+            window.addEventListener('blur', () => {
+              if (window.UnicornStudio && window.UnicornStudio.pause) {
+                window.UnicornStudio.pause();
+              }
+            });
+
+            // Возобновление при получении фокуса
+            window.addEventListener('focus', () => {
+              if (window.UnicornStudio && window.UnicornStudio.play) {
+                window.UnicornStudio.play();
+              }
+            });
+          }
         }
         
         // Удаляем водяной знак после инициализации
