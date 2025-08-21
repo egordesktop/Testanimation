@@ -103,3 +103,4 @@ export default function WatermarkRemover() {
 
   return null // Этот компонент не рендерит ничего
 }
+
