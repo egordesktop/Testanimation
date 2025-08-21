@@ -30,8 +30,12 @@ export default function RootLayout({
         {/* Компонент для удаления водяного знака */}
         <WatermarkRemover />
         
-        {/* Фоновая анимация */}
-        <UnicornBackground projectId="bvspPQLSZj0ipL9pUQmJ" />
+        {/* Фоновая анимация - ОБНОВЛЕНО с поддержкой видео для мобильных */}
+        <UnicornBackground 
+          projectId="bvspPQLSZj0ipL9pUQmJ"
+          mobileVideoWebm="/background-mobile.webm"
+          mobileVideoMp4="/background-mobile.mp4"
+        />
         
         {/* Основной контент */}
         <main className="relative z-10 w-full min-w-full">
